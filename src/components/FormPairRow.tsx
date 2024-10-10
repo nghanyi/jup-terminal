@@ -3,11 +3,11 @@ import { TokenInfo } from '@solana/spl-token-registry';
 import Decimal from 'decimal.js';
 import { WRAPPED_SOL_MINT } from 'src/constants';
 import { checkIsStrictOrVerified, checkIsToken2022, checkIsUnknownToken } from 'src/misc/tokenTags';
-import { useAccounts } from 'src/contexts/accounts';
 import { formatNumber } from 'src/misc/utils';
 import TokenIcon from './TokenIcon';
 import TokenLink from './TokenLink';
 import CoinBalance from './Coinbalance';
+import { useAccounts } from 'src/contexts/accountsv2';
 
 export const PAIR_ROW_HEIGHT = 72;
 
@@ -31,7 +31,7 @@ interface IMultiTag {
 }
 
 const MultiTags: React.FC<IPairRow> = ({ item }) => {
-  const { accounts } = useAccounts();
+  const { mintToAssociatedTokenAccountMap } = useAccounts();
   const isLoading = useRef<boolean>(false);
   const isLoaded = useRef<boolean>(false);
   // It's cheaper to slightly delay and rendering once, than rendering everything all the time
@@ -53,7 +53,7 @@ const MultiTags: React.FC<IPairRow> = ({ item }) => {
         isLST: Boolean(item.tags?.includes('lst')),
         // isUnknown: checkIsUnknownToken(item),
         isToken2022: Boolean(checkIsToken2022(item)),
-        isFrozen: accounts[item.address]?.isFrozen || false,
+        isFrozen: mintToAssociatedTokenAccountMap?.get(item.address)?.info.isFrozen || false,
       };
       setRenderedTag(result);
       isLoading.current = false;

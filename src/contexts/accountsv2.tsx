@@ -25,6 +25,7 @@ export interface IAccountsBalance {
 interface IAccountContext {
   accounts: TokenAccount[];
   nativeAccount: TokenAccount | null;
+  mintToAssociatedTokenAccountMap: Map<string, TokenAccount>;
   isFetching: boolean;
   isInitialLoading: boolean;
   fetchTokenAccounts: (mintsOrAccounts: (string | PublicKey)[]) => void;
@@ -35,6 +36,7 @@ interface IAccountContext {
 const AccountContext = React.createContext<IAccountContext>({
   accounts: [],
   nativeAccount: null,
+  mintToAssociatedTokenAccountMap: new Map(),
   isFetching: false,
   isInitialLoading: false,
   fetchTokenAccounts: () => {},
@@ -162,7 +164,7 @@ const AccountsProvider: React.FC<PropsWithChildren> = ({ children }) => {
   );
 
   const fetchAllAccounts = useCallback(() => {
-    // only refetch when > 20s or not fetched before
+    // TODO: read from prop once merged
     if (!lastAllTokensFetchedTime.current || Date.now() - lastAllTokensFetchedTime.current > 20_000) {
       return _fetchAllAccounts();
     }
@@ -233,7 +235,7 @@ const AccountsProvider: React.FC<PropsWithChildren> = ({ children }) => {
     }
   }, [publicKey, remove, reset]);
 
-  const { userAccounts } = useMemo(() => {
+  const { userAccounts, mintToAssociatedTokenAccountMap } = useMemo(() => {
     const addressToTokenAccountMap = new Map([...ataToUserAccount, ...(fetchedAtaToUserAccount || new Map())]);
     const userAccounts = Array.from(addressToTokenAccountMap.values());
 
@@ -265,6 +267,7 @@ const AccountsProvider: React.FC<PropsWithChildren> = ({ children }) => {
       value={{
         accounts: userAccounts,
         nativeAccount,
+        mintToAssociatedTokenAccountMap,
         isInitialLoading: fetchAllAccountsStatus !== 'success',
         isFetching: isFetchingTokenAcounts || isFetchingAllAccounts || isFetchingNativeAccount,
         fetchAllAccounts,
