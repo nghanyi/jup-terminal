@@ -1,7 +1,7 @@
 import { MouseEvent, useCallback, useEffect, useMemo } from 'react';
 import { NumberFormatValues, NumericFormat } from 'react-number-format';
 
-import { useAccounts } from '../contexts/accounts';
+import { useAccounts } from '../contexts/accountsv2';
 
 import { MAX_INPUT_LIMIT, MINIMUM_SOL_BALANCE } from '../misc/constants';
 
@@ -36,7 +36,7 @@ const Form: React.FC<{
   setIsWalletModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }> = ({ onSubmit, isDisabled, setSelectPairSelector, setIsWalletModalOpen }) => {
   const { publicKey } = useWalletPassThrough();
-  const { accounts, nativeAccount } = useAccounts();
+  // const { accounts, nativeAccount } = useAccounts();
   const {
     form,
     setForm,
@@ -88,15 +88,16 @@ const Form: React.FC<{
     setForm((form) => ({ ...form, toValue: value }));
   };
 
-  const balance: string | null = useMemo(() => {
-    if (!fromTokenInfo?.address) return null;
+  const balance = '0';
+  // const balance: string | null = useMemo(() => {
+  //   if (!fromTokenInfo?.address) return null;
 
-    const accBalanceObj =
-      fromTokenInfo?.address === WRAPPED_SOL_MINT.toString() ? nativeAccount : accounts[fromTokenInfo.address];
-    if (!accBalanceObj) return '';
+  //   const accBalanceObj =
+  //     fromTokenInfo?.address === WRAPPED_SOL_MINT.toString() ? nativeAccount : accounts[fromTokenInfo.address];
+  //   if (!accBalanceObj) return '';
 
-    return accBalanceObj.balance;
-  }, [accounts, fromTokenInfo?.address, nativeAccount]);
+  //   return accBalanceObj.balance;
+  // }, [accounts, fromTokenInfo?.address, nativeAccount]);
 
   const onClickMax = useCallback(
     (e: React.MouseEvent<HTMLElement>) => {

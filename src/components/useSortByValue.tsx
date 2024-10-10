@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { WRAPPED_SOL_MINT } from 'src/constants';
 import { useTokenContext } from 'src/contexts/TokenContextProvider';
 import { useUSDValue } from 'src/contexts/USDValueProvider';
-import { useAccounts } from 'src/contexts/accounts';
+import { useAccounts } from 'src/contexts/accountsv2';
 import { checkIsUnknownToken } from 'src/misc/tokenTags';
 import { fromLamports } from 'src/misc/utils';
 
@@ -15,43 +15,43 @@ export const useSortByValue = () => {
 
   const mintBalanceMap = useRef<Map<string, number>>(new Map());
   const mintToUsdValue = useRef<Map<string, Decimal>>(new Map());
-  useEffect(() => {
-    const wsol = WRAPPED_SOL_MINT.toBase58();
-    Object.entries(accounts)
-      .filter(([mint, item]) => item.balanceLamports.gtn(0))
-      .forEach(([mint, item]) => {
-        const tokenInfo = getTokenInfo(mint);
-        if (!tokenInfo) return;
+  // useEffect(() => {
+  //   const wsol = WRAPPED_SOL_MINT.toBase58();
+  //   Object.entries(accounts)
+  //     .filter(([mint, item]) => item.balanceLamports.gtn(0))
+  //     .forEach(([mint, item]) => {
+  //       const tokenInfo = getTokenInfo(mint);
+  //       if (!tokenInfo) return;
 
-        let amount = fromLamports(item.balanceLamports, tokenInfo.decimals);
-        if (mint === WRAPPED_SOL_MINT.toBase58() && nativeAccount) {
-          amount += fromLamports(nativeAccount.balanceLamports, tokenInfo.decimals);
-        }
-        mintBalanceMap.current.set(mint, amount);
+  //       let amount = fromLamports(item.balanceLamports, tokenInfo.decimals);
+  //       if (mint === WRAPPED_SOL_MINT.toBase58() && nativeAccount) {
+  //         amount += fromLamports(nativeAccount.balanceLamports, tokenInfo.decimals);
+  //       }
+  //       mintBalanceMap.current.set(mint, amount);
 
-        const tokenPrice = tokenPriceMap[mint]?.usd;
-        if (tokenPrice) {
-          const usdValue = new Decimal(amount).mul(tokenPrice);
-          if (usdValue.greaterThan(0)) {
-            mintToUsdValue.current.set(mint, usdValue);
-          }
-        }
-      }, new Map<string, number>());
+  //       const tokenPrice = tokenPriceMap[mint]?.usd;
+  //       if (tokenPrice) {
+  //         const usdValue = new Decimal(amount).mul(tokenPrice);
+  //         if (usdValue.greaterThan(0)) {
+  //           mintToUsdValue.current.set(mint, usdValue);
+  //         }
+  //       }
+  //     }, new Map<string, number>());
 
-    // might need a better way to detect for SOL when there's no ATA and we need to include it
-    if (nativeAccount && !mintBalanceMap.current.has(wsol)) {
-      const amount = fromLamports(nativeAccount.balanceLamports, 9);
-      mintBalanceMap.current.set(WRAPPED_SOL_MINT.toBase58(), amount);
+  //   // might need a better way to detect for SOL when there's no ATA and we need to include it
+  //   if (nativeAccount && !mintBalanceMap.current.has(wsol)) {
+  //     const amount = fromLamports(nativeAccount.balanceLamports, 9);
+  //     mintBalanceMap.current.set(WRAPPED_SOL_MINT.toBase58(), amount);
 
-      const tokenPrice = tokenPriceMap[WRAPPED_SOL_MINT.toBase58()]?.usd;
-      if (tokenPrice) {
-        const usdValue = new Decimal(amount).mul(tokenPrice);
-        if (usdValue.greaterThan(0)) {
-          mintToUsdValue.current.set(WRAPPED_SOL_MINT.toBase58(), usdValue);
-        }
-      }
-    }
-  }, [getTokenInfo, nativeAccount, tokenPriceMap, accounts]);
+  //     const tokenPrice = tokenPriceMap[WRAPPED_SOL_MINT.toBase58()]?.usd;
+  //     if (tokenPrice) {
+  //       const usdValue = new Decimal(amount).mul(tokenPrice);
+  //       if (usdValue.greaterThan(0)) {
+  //         mintToUsdValue.current.set(WRAPPED_SOL_MINT.toBase58(), usdValue);
+  //       }
+  //     }
+  //   }
+  // }, [getTokenInfo, nativeAccount, tokenPriceMap, accounts]);
 
   const sortTokenListByBalance = useCallback(async (tokenList: TokenInfo[]): Promise<TokenInfo[]> => {
     const newList = [...tokenList];

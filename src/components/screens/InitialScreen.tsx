@@ -6,7 +6,7 @@ import { useSwapContext } from 'src/contexts/SwapContext';
 import Form from '../../components/Form';
 import FormPairSelector from '../../components/FormPairSelector';
 import { useTokenContext } from '../../contexts/TokenContextProvider';
-import { useAccounts } from '../../contexts/accounts';
+import { useAccounts } from '../../contexts/accountsv2';
 import UnknownTokenModal from '../UnknownTokenModal/UnknownTokenModal';
 import { WRAPPED_SOL_MINT } from 'src/constants';
 import classNames from 'classnames';
@@ -18,7 +18,7 @@ interface Props {
 }
 
 const InitialScreen = ({ setIsWalletModalOpen, isWalletModalOpen }: Props) => {
-  const { accounts, nativeAccount } = useAccounts();
+  // const { accounts, nativeAccount } = useAccounts();
   const { tokenMap } = useTokenContext();
   const {
     form,
@@ -30,10 +30,12 @@ const InitialScreen = ({ setIsWalletModalOpen, isWalletModalOpen }: Props) => {
   } = useSwapContext();
   const { setScreen } = useScreenState();
 
-  const balance = useMemo(() => {
-    if (form.fromMint === WRAPPED_SOL_MINT.toString()) return nativeAccount?.balance || 0;
-    return form.fromMint ? accounts[form.fromMint]?.balance || 0 : 0;
-  }, [accounts, form.fromMint, nativeAccount?.balance]);
+  const balance = 0;
+
+  // const balance = useMemo(() => {
+  //   if (form.fromMint === WRAPPED_SOL_MINT.toString()) return nativeAccount?.balance || 0;
+  //   return form.fromMint ? accounts[form.fromMint]?.balance || 0 : 0;
+  // }, [accounts, form.fromMint, nativeAccount?.balance]);
 
   const [isDisabled, setIsDisabled] = useState(false);
   useEffect(() => {

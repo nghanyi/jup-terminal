@@ -7,7 +7,7 @@ import JSBI from 'jsbi';
 import { useEffect, useMemo, useState } from 'react';
 import { usePrioritizationFee } from 'src/contexts/PrioritizationFeeContextProvider';
 import { useWalletPassThrough } from 'src/contexts/WalletPassthroughProvider';
-import { useAccounts } from 'src/contexts/accounts';
+import { useAccounts } from 'src/contexts/accountsv2';
 import { formatNumber } from 'src/misc/utils';
 import ExchangeRate from '../ExchangeRate';
 import Deposits from './Deposits';
@@ -37,7 +37,7 @@ const Index = ({
     outputDecimal: toTokenInfo.decimals,
   };
 
-  const { accounts } = useAccounts();
+  const { mintToAssociatedTokenAccountMap } = useAccounts();
 
   const { wallet } = useWalletPassThrough();
   const walletPublicKey = useMemo(() => wallet?.adapter.publicKey?.toString(), [wallet?.adapter.publicKey]);
@@ -57,9 +57,15 @@ const Index = ({
 
   const [feeInformation, setFeeInformation] = useState<TransactionFeeInfo>();
 
+  // const mintToAccountMap = useMemo(() => {
+  //   return new Map(Object.entries(accounts).map((acc) => [acc[0], acc[1].pubkey.toString()]));
+  // }, [accounts]);
+
   const mintToAccountMap = useMemo(() => {
-    return new Map(Object.entries(accounts).map((acc) => [acc[0], acc[1].pubkey.toString()]));
-  }, [accounts]);
+    return new Map(
+      Array.from(mintToAssociatedTokenAccountMap.entries()).map(([mint, acc]) => [mint, acc.pubkey.toString()]),
+    );
+  }, [mintToAssociatedTokenAccountMap]);
 
   useEffect(() => {
     if (quoteResponse) {

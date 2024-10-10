@@ -227,4 +227,4 @@ const useAccounts = () => {
   return useContext(AccountContext);
 };
 
-export { AccountsProvider, useAccounts };
+export { AccountsProvider };
