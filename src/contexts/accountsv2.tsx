@@ -165,7 +165,8 @@ const AccountsProvider: React.FC<PropsWithChildren> = ({ children }) => {
 
   const fetchAllAccounts = useCallback(() => {
     // TODO: read from prop once merged
-    if (!lastAllTokensFetchedTime.current || Date.now() - lastAllTokensFetchedTime.current > 20_000) {
+    const rpcRefetchInterval = 20_000;
+    if (!lastAllTokensFetchedTime.current || Date.now() - lastAllTokensFetchedTime.current > rpcRefetchInterval) {
       return _fetchAllAccounts();
     }
   }, [_fetchAllAccounts]);

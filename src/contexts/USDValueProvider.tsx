@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createContext, FC, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useDebounce, useLocalStorage } from 'react-use';
 import { splitIntoChunks } from 'src/misc/utils';
-import { useAccounts } from './accounts';
+import { useAccounts } from './accountsv2';
 import { useSwapContext } from './SwapContext';
 import { useTokenContext } from './TokenContextProvider';
 
@@ -194,9 +194,9 @@ export const USDValueProvider: FC<{ children: ReactNode }> = ({ children }) => {
   useEffect(() => {
     if (!Object.keys(accounts).length) return;
 
-    const userAccountAddresses: string[] = Object.keys(accounts)
-      .map((key) => {
-        const token = getTokenInfo(key);
+    const userAccountAddresses: string[] = accounts
+      .map((account) => {
+        const token = getTokenInfo(account.pubkey.toString());
 
         if (!token) return undefined;
 

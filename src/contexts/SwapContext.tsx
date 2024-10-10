@@ -27,7 +27,7 @@ import { usePrioritizationFee } from './PrioritizationFeeContextProvider';
 import { useScreenState } from './ScreenProvider';
 import { useTokenContext } from './TokenContextProvider';
 import { useWalletPassThrough } from './WalletPassthroughProvider';
-import { useAccounts } from './accounts';
+import { useAccounts } from './accountsv2';
 
 export interface IForm {
   fromMint: string;
@@ -135,7 +135,7 @@ export const SwapContextProvider: FC<{
   const { screen } = useScreenState();
   const { isLoaded, getTokenInfo } = useTokenContext();
   const { wallet } = useWalletPassThrough();
-  const { refresh: refreshAccount } = useAccounts();
+  const { refetchAccounts } = useAccounts();
 
   const walletPublicKey = useMemo(() => wallet?.adapter.publicKey?.toString(), [wallet?.adapter.publicKey]);
   const formProps: FormProps = useMemo(() => ({ ...INITIAL_FORM, ...originalFormProps }), [originalFormProps]);
@@ -515,9 +515,9 @@ export const SwapContextProvider: FC<{
       setErrors({});
       setLastSwapResult(null);
       setTxStatus(undefined);
-      refreshAccount();
+      refetchAccounts();
     },
-    [refreshAccount, setupInitialAmount],
+    [refetchAccounts, setupInitialAmount],
   );
 
   // onFormUpdate callback
