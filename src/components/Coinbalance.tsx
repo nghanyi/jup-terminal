@@ -1,36 +1,34 @@
 import * as React from 'react';
-import { useWalletPassThrough } from 'src/contexts/WalletPassthroughProvider';
-
-import { useAccounts } from '../contexts/accountsv2';
 
 import { formatNumber } from '../misc/utils';
-import { WRAPPED_SOL_MINT } from 'src/constants';
 import Decimal from 'decimal.js';
+import { useAccounts, useUserBalance } from 'src/contexts/accountsv2';
 
 interface ICoinBalanceProps {
   mintAddress: string;
   hideZeroBalance?: boolean;
 }
 
+const GetBalance: React.FunctionComponent<ICoinBalanceProps> = ({ mintAddress, ...props }) => {
+  const { balance } = useUserBalance(mintAddress);
+
+  const totalBalance = React.useMemo(() => {
+    return new Decimal(balance);
+  }, [balance]);
+
+  if (props.hideZeroBalance && totalBalance.eq(0)) return null;
+
+  return <span translate="no">{formatNumber.format(totalBalance)}</span>;
+};
+
 const CoinBalance: React.FunctionComponent<ICoinBalanceProps> = (props) => {
-  const { accounts, nativeAccount, mintToAssociatedTokenAccountMap } = useAccounts();
-  const { connected } = useWalletPassThrough();
+  const { accounts } = useAccounts();
+  // Prevent too many RPC calls
+  if (!accounts) {
+    return <></>;
+  }
 
-  const formattedBalance: string | null = React.useMemo(() => {
-    const accBalanceObj =
-      props.mintAddress === WRAPPED_SOL_MINT.toString()
-        ? nativeAccount
-        : mintToAssociatedTokenAccountMap?.get(props.mintAddress);
-    if (!accBalanceObj) return '';
-
-    const balance = new Decimal(accBalanceObj.balanceLamports.toString()).div(10 ** accBalanceObj.decimals);
-    return formatNumber.format(balance, accBalanceObj.decimals);
-  }, [accounts, nativeAccount, props.mintAddress]);
-
-  if (props.hideZeroBalance && !formattedBalance) return null;
-
-  if (!connected) return null;
-  return <span translate="no">{formattedBalance}</span>;
+  return <GetBalance {...props} />;
 };
 
 export default CoinBalance;

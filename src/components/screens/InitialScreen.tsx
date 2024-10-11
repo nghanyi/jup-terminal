@@ -6,7 +6,7 @@ import { useSwapContext } from 'src/contexts/SwapContext';
 import Form from '../../components/Form';
 import FormPairSelector from '../../components/FormPairSelector';
 import { useTokenContext } from '../../contexts/TokenContextProvider';
-import { useAccounts } from '../../contexts/accountsv2';
+import { useAccounts, useUserBalance } from '../../contexts/accountsv2';
 import UnknownTokenModal from '../UnknownTokenModal/UnknownTokenModal';
 import { WRAPPED_SOL_MINT } from 'src/constants';
 import classNames from 'classnames';
@@ -30,7 +30,7 @@ const InitialScreen = ({ setIsWalletModalOpen, isWalletModalOpen }: Props) => {
   } = useSwapContext();
   const { setScreen } = useScreenState();
 
-  const balance = 0;
+  const { balance } = useUserBalance();
 
   // const balance = useMemo(() => {
   //   if (form.fromMint === WRAPPED_SOL_MINT.toString()) return nativeAccount?.balance || 0;

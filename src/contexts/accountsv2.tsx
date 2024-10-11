@@ -11,6 +11,8 @@ import { checkIsToken2022 } from 'src/misc/tokenTags';
 import { getMultipleAccountsInfo } from '@mercurial-finance/optimist';
 import { useTokenContext } from './TokenContextProvider';
 import { useUSDValueProvider } from './USDValueProvider';
+import { WRAPPED_SOL_MINT } from 'src/constants';
+import Decimal from 'decimal.js';
 
 const TOKEN_2022_PROGRAM_ID = new PublicKey('TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb');
 
@@ -25,6 +27,7 @@ export interface IAccountsBalance {
 interface IAccountContext {
   accounts: TokenAccount[];
   nativeAccount: TokenAccount | null;
+  addressToTokenAccountMap: Map<string, TokenAccount>;
   mintToAssociatedTokenAccountMap: Map<string, TokenAccount>;
   isFetching: boolean;
   isInitialLoading: boolean;
@@ -36,6 +39,7 @@ interface IAccountContext {
 const AccountContext = React.createContext<IAccountContext>({
   accounts: [],
   nativeAccount: null,
+  addressToTokenAccountMap: new Map(),
   mintToAssociatedTokenAccountMap: new Map(),
   isFetching: false,
   isInitialLoading: false,
@@ -236,7 +240,7 @@ const AccountsProvider: React.FC<PropsWithChildren> = ({ children }) => {
     }
   }, [publicKey, remove, reset]);
 
-  const { userAccounts, mintToAssociatedTokenAccountMap } = useMemo(() => {
+  const { userAccounts, mintToAssociatedTokenAccountMap, addressToTokenAccountMap } = useMemo(() => {
     const addressToTokenAccountMap = new Map([...ataToUserAccount, ...(fetchedAtaToUserAccount || new Map())]);
     const userAccounts = Array.from(addressToTokenAccountMap.values());
 
@@ -268,6 +272,7 @@ const AccountsProvider: React.FC<PropsWithChildren> = ({ children }) => {
       value={{
         accounts: userAccounts,
         nativeAccount,
+        addressToTokenAccountMap,
         mintToAssociatedTokenAccountMap,
         isInitialLoading: fetchAllAccountsStatus !== 'success',
         isFetching: isFetchingTokenAcounts || isFetchingAllAccounts || isFetchingNativeAccount,
@@ -308,3 +313,127 @@ const useAccounts = () => {
 };
 
 export { AccountsProvider, useAccounts };
+
+interface IUserAccount {
+  isFetching: boolean;
+  isInitialLoading: boolean;
+}
+
+interface IUserBalance {
+  isFrozen: boolean;
+  balance: string;
+  balanceLamports: BN;
+  accounts: TokenAccount[];
+  hasBalance: boolean;
+  decimals: number;
+}
+interface IUseUserBalance extends IUserAccount, IUserBalance {}
+interface IuseUserBalances extends IUserAccount {
+  balances: Map<string, IUserBalance>;
+}
+
+export function useUserBalances(
+  mintAddresses?: Array<PublicKey | string | undefined>,
+  decimals?: Array<number | undefined>,
+  useWSol?: boolean,
+): IuseUserBalances {
+  const { publicKey } = useWalletPassThrough();
+  const { getTokenInfo } = useTokenContext();
+  const {
+    nativeAccount,
+    accounts,
+    addressToTokenAccountMap,
+    mintToAssociatedTokenAccountMap,
+    isInitialLoading,
+    isFetching,
+  } = useAccounts();
+
+  const userBalances = useMemo(() => {
+    return mintAddresses
+      ? mintAddresses.reduce((acc, mintAddress, index) => {
+          const mint: PublicKey | null = (() => {
+            if (!mintAddress) return null;
+            try {
+              return typeof mintAddress === 'string' ? new PublicKey(mintAddress) : mintAddress;
+            } catch (error) {
+              return null;
+            }
+          })();
+
+          const balanceAcc = mintToAssociatedTokenAccountMap.get(mint?.toBase58() || '') ?? null;
+          const balanceLamports = (() => {
+            if (!publicKey || !mint) return new BN(0);
+
+            if (mint.equals(WRAPPED_SOL_MINT) && !useWSol) {
+              const solBalanceAcc = addressToTokenAccountMap.get(publicKey.toBase58());
+              return new BN(solBalanceAcc?.info.amount.toString() || '0').add(
+                new BN(nativeAccount?.info.amount.toString() || '0'),
+              );
+            }
+            return balanceAcc ? new BN(balanceAcc.info.amount) : new BN(0);
+          })();
+
+          const tokenInfo = getTokenInfo(mintAddresses?.toString() || '');
+          const tokenDecimals = decimals?.[index] || tokenInfo?.decimals || 0;
+          const balance = new Decimal(balanceLamports.toString())
+            .div(10 ** (decimals?.[index] || tokenDecimals))
+            .toString();
+          const isFrozen = balanceAcc?.info.isFrozen || false;
+
+          const result = {
+            isFrozen,
+            balance,
+            balanceLamports,
+            accounts: mint
+              ? accounts.filter((acc) => mint.equals(acc.info.mint)).sort((a, b) => b.info.amount.cmp(a.info.amount))
+              : [],
+            hasBalance: balanceLamports.gtn(0),
+            decimals: tokenDecimals,
+          };
+          acc.set(mint?.toString() || '', result);
+          return acc;
+        }, new Map<string, IUserBalance>())
+      : new Map<string, IUserBalance>();
+  }, [
+    nativeAccount,
+    accounts,
+    addressToTokenAccountMap,
+    mintToAssociatedTokenAccountMap,
+    mintAddresses,
+    publicKey,
+    getTokenInfo,
+    decimals,
+    useWSol,
+  ]);
+
+  return useMemo(
+    () => ({
+      balances: userBalances,
+      isFetching,
+      isInitialLoading,
+    }),
+    [userBalances, isFetching, isInitialLoading],
+  );
+}
+
+export function useUserBalance(
+  mintAddress?: PublicKey | string,
+  decimals?: number,
+  useWSol?: boolean,
+): IUseUserBalance {
+  const userBalances = useUserBalances([mintAddress], [decimals], useWSol);
+  const userBalance = userBalances.balances.get(mintAddress?.toString() || '');
+  return useMemo(
+    () => ({
+      isFrozen: userBalance?.isFrozen || false,
+      balance: userBalance?.balance || '0',
+      balanceLamports: userBalance?.balanceLamports || new BN(0),
+      accounts: userBalance?.accounts || [],
+      hasBalance: userBalance?.hasBalance || false,
+      decimals: userBalance?.decimals || decimals || 0,
+      isFetching: userBalances.isFetching,
+      isInitialLoading: userBalances.isInitialLoading,
+    }),
+    [userBalances, userBalance, decimals],
+  );
+}
